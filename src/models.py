@@ -31,20 +31,20 @@ class TranAD(nn.Module):
 		self.fcn = nn.Sequential(nn.Linear(2 * feats, feats), nn.Sigmoid())
 
 	def encode(self, src, c, tgt):
-		src = torch.cat((src, c), dim=2)
-		src = src * math.sqrt(self.n_feats)
+		src = torch.cat((src, c), dim=2) # 拼接后 src:(10,128,76)
+		src = src * math.sqrt(self.n_feats) # src:(10,128,76)
 		src = self.pos_encoder(src)
-		memory = self.transformer_encoder(src)
-		tgt = tgt.repeat(1, 1, 2)
+		memory = self.transformer_encoder(src) # memory:(10,128,76)
+		tgt = tgt.repeat(1, 1, 2) # tgt:(1,128,76)
 		return tgt, memory
 
-	def forward(self, src, tgt):
+	def forward(self, src, tgt): # tgt:(1,128,38)
 		# Phase 1 - Without anomaly scores
-		c = torch.zeros_like(src)
-		x1 = self.fcn(self.transformer_decoder1(*self.encode(src, c, tgt)))
+		c = torch.zeros_like(src) # c: (10,128,38)
+		x1 = self.fcn(self.transformer_decoder1(*self.encode(src, c, tgt))) # x1:(1,128,38)
 		# Phase 2 - With anomaly scores
-		c = (x1 - src) ** 2
-		x2 = self.fcn(self.transformer_decoder2(*self.encode(src, c, tgt)))
+		c = (x1 - src) ** 2 # c: (10,128,38)
+		x2 = self.fcn(self.transformer_decoder2(*self.encode(src, c, tgt))) # x2:(1,128,38)
 		return x1, x2
 
 
