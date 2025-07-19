@@ -6,6 +6,8 @@ import  numpy as np
 from src.utils import *
 import torch.nn as nn
 import torch
+from time import time
+from pprint import pprint
 
 def load_dataset(dataset):
 	folder = os.path.join(processed_data_folder, dataset)
@@ -21,14 +23,14 @@ def load_dataset(dataset):
 		loader.append(np.load(os.path.join(folder, f'{file}.npy')))
 	# loader = [i[:, debug:debug+1] for i in loader]
     # loader里面存了三个二维数组，machine-1-1_train.npy machine-1-1_test.npy machine-1-1_labels.npy
-	if args.less: loader[0] = cut_array(0.2, loader[0])
+	#if args.less: loader[0] = cut_array(0.2, loader[0])
     # batch_size一个批次是一台机器的28439次检测
 	train_loader = DataLoader(loader[0], batch_size=loader[0].shape[0])
 	test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0])
 	labels = loader[2]
 	return train_loader, test_loader, labels
 
-def convert_to_windows(data, model):
+def convert_to_windows(data, model,args):
     """
     将时序数据转换为滑动窗口格式（适配时序异常检测模型的输入要求）
     参数:
@@ -48,7 +50,7 @@ def convert_to_windows(data, model):
             # 前w_size个窗口：用首元素重复(w_size-i)次，再拼接前i个元素
             w = torch.cat([data[0].repeat(w_size - i, 1), data[0:i]])
         # 对TranAD或Attention模型，窗口保持原形状；其他模型展平窗口为一维特征
-        windows.append(w if 'TranAD' in args.model or 'Attention' in args.model else w.view(-1))
+        windows.append(w if 'DTAAD' in args.model or 'TranAD' in args.model or 'Attention' in args.model else w.view(-1))
     return torch.stack(windows)  # 堆叠所有窗口为张量
 
 # 举例

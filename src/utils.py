@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
 import os
-from src.constants import *
-import pandas as pd
-import numpy as np
+import seaborn
 
 class color:
     HEADER = '\033[95m'
@@ -25,6 +23,17 @@ def plot_accuracies(accuracy_list, folder):
 	plt.plot(range(len(lrs)), lrs, label='Learning Rate', color='r', linewidth=1, linestyle='--', marker='.')
 	plt.savefig(f'plots/{folder}/training-graph.pdf')
 	plt.clf()
+
+def plot_attention(model, layers, folder):
+    os.makedirs(f'plots/{folder}/', exist_ok=True)
+    for layer in range(layers):  # layers
+        fig, (axs, axs1) = plt.subplots(1, 2, figsize=(10, 4))
+        heatmap = seaborn.heatmap(model.transformer_encoder1.layers[layer].att[0].data.cpu(), ax=axs)
+        heatmap.set_title("Local_attention", fontsize=10)
+        heatmap = seaborn.heatmap(model.transformer_encoder2.layers[layer].att[0].data.cpu(), ax=axs1)
+        heatmap.set_title("Global_attention", fontsize=10)
+    heatmap.get_figure().savefig(f'plots/{folder}/attention-score.png')
+    plt.clf()
 
 def cut_array(percentage, arr):
 	print(f'{color.BOLD}Slicing dataset to {int(percentage*100)}%{color.ENDC}')

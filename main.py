@@ -12,7 +12,7 @@ from time import time  # 用于计算时间
 from pprint import pprint  # 用于格式化输出
 from src.plotting import *
 from src.load_data import *
-from src.backprop import backprop
+from src.backprop import *
 
 
 def save_model(model, optimizer, scheduler, epoch, accuracy_list):
@@ -100,19 +100,29 @@ if __name__ == '__main__':
 
     # 对需要窗口输入的模型，转换训练和测试数据为窗口格式，
     # 'TranAD'有多个模型，单独放置更灵活地匹配所有包含 TranAD 的模型名称，而无需枚举所有变体。
-    if model.name in ['GDN', 'MTAD_GAT','MAD_GAN'] or 'TranAD'in model.name:
-        trainD, testD = convert_to_windows(trainD, model), convert_to_windows(testD, model) # trainD:{28479,10,38}
+    if model.name in 'TranAD' or 'DTAAD'in model.name:
+        trainD, testD = convert_to_windows(trainD, model,args), convert_to_windows(testD, model,args) # trainD:{28479,10,38}
 
+        # **** 修改后的获取对应的反向传播策略
+    backprop_strategy = BackpropFactory.get_strategy(model)
     # -------------------------- 训练阶段 --------------------------
     if not args.test:  # 训练
         print(f'{color.HEADER}在{args.dataset}数据集上训练{args.model}模型{color.ENDC}')
-        num_epochs = 2  # 训练轮次
+        num_epochs = 1  # 训练轮次
         e = epoch + 1  # 起始轮次
         start = time()  # 记录开始时间
         # 迭代训练轮次（用tqdm显示进度条）
         for e in tqdm(list(range(epoch + 1, epoch + num_epochs + 1))):
             # 调用backprop进行训练，返回损失和学习率
-            lossT, lr = backprop(e, model, trainD, trainO, optimizer, scheduler)
+            # 新代码：通过策略实例调用forward方法
+            lossT, lr = backprop_strategy.forward(
+                epoch=e,
+                data=trainD,
+                dataO=trainO,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                training=True  # 训练模式
+            )
             accuracy_list.append((lossT, lr))  # 记录训练过程
         # 打印训练时间
 
@@ -127,16 +137,36 @@ if __name__ == '__main__':
     model.eval()
     print(f'{color.HEADER}在{args.dataset}数据集上测试{args.model}模型{color.ENDC}')
     # 调用backprop进行测试，返回损失和预测结果 loss:(28479,38)  y_pred(28479,38)
-    loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False) # loss(28479,38) y_pred(28479,38)
-
+    #loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False) # loss(28479,38) y_pred(28479,38)
+    # 使用策略模式调用测试逻辑
+    loss, y_pred = backprop_strategy.forward(
+        epoch=0,
+        data=testD,
+        dataO=testO,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        training=False
+    )
     if not args.test:
-        if 'TranAD' in model.name: testO = torch.roll(testO, 1, 0)
+        if 'TranAD' or 'DTAAD' in model.name: testO = torch.roll(testO, 1, 0)
         plotter(f'{args.model}_{args.dataset}', testO, y_pred, loss, labels)
+
+        ### Plot attention
+    if not args.test:
+        if 'DTAAD' in model.name:
+            plot_attention(model, 1, f'{args.model}_{args.dataset}')
 
     # 评估指标计算
     df = pd.DataFrame()  # 存储每个特征的评估结果
-    # 计算训练集损失（用于确定异常阈值） lossT(28479,38)
-    lossT, _ = backprop(0, model, trainD, trainO, optimizer, scheduler, training=False)
+    # 计算训练集损失（用于确定异常阈值）
+    lossT, _ = backprop_strategy.forward(
+        epoch=0,
+        data=trainD,
+        dataO=trainO,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        training=False
+    )
 
     # 对每个特征单独评估
     for i in range(loss.shape[1]): # i 0~37
@@ -161,5 +191,7 @@ if __name__ == '__main__':
     result.update(ndcg(loss, labels))
 
     # 打印评估结果
-    print(df)  # 每个特征的评估结果
-    pprint(result)  # 综合评估结果
+    print("各特征评估结果：")
+    print(df)
+    print("\n综合评估结果：")
+    pprint(result)

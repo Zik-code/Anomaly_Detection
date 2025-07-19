@@ -22,9 +22,15 @@ parser.add_argument('--retrain',
 					action='store_true',
 					help="retrain the model")
 parser.add_argument('--less',
-					action='store_true',
-					help="train using less data")
+ 					action='store_true',
+ 					help="train using less data")
 
+# parser.add_argument('--Device',
+#                     metavar='-D',
+#                     type=str,
+#                     required=False,
+#                     default='cpu',
+#                     help="cuda or cpu")
 # 解析命令行参数
 args = parser.parse_args()
 
