@@ -108,7 +108,7 @@ if __name__ == '__main__':
     # -------------------------- 训练阶段 --------------------------
     if not args.test:  # 训练
         print(f'{color.HEADER}在{args.dataset}数据集上训练{args.model}模型{color.ENDC}')
-        num_epochs = 1  # 训练轮次
+        num_epochs = 10  # 训练轮次
         e = epoch + 1  # 起始轮次
         start = time()  # 记录开始时间
         # 迭代训练轮次（用tqdm显示进度条）
