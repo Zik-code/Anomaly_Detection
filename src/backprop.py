@@ -18,7 +18,6 @@ class BackpropStrategy(ABC):
         """统一接口：训练或测试入口"""
         pass
 
-
 # -------------------------- OmniAnomaly模型子类 --------------------------
 class OmniAnomalyBackprop(BackpropStrategy):
     def forward(self, epoch, data, dataO, optimizer, scheduler, training=True):
