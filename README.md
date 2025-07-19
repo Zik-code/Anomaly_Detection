@@ -1,6 +1,28 @@
 
 ### 一、项目简介
-通过深度学习模型对时序数据进行建模，学习正常模式的特征，再通过“重构误差”识别偏离正常模式的异常数据，最终实现对时序数据中异常片段的自动检测。
+这是一个集成了几个深度学习方法对时序数据进行异常检测的项目。 
+
+安装python以及pytorch 
+
+项目需要python 3.7以上的版本。 
+请执行以下命令安装pytorch
+```python
+pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchaudio===0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+```
+请执行以下命令安装所需库 
+
+```python
+pip install -r requirements.txt
+```
+所需数据集已经经过预处理并放置在processed_data文件夹下。
+要在数据集上运行模型复现结果，请执行以下命令：
+```python
+python main.py --model <model> --dataset <dataset> # 加载预训练模型进行训练
+```
+```python
+python main.py --model <model> --dataset <dataset> --retrain # 重新训练模型
+```
+其中，模型可以是 'TranAD'、'OmniAnomaly'、'DTAAD' 中的任意一个，数据集可以是 'SMAP'、'SMD'、 'NAB' 中的任意一个。
 
 ### 二、核心模块与流程拆解
 
@@ -20,7 +42,7 @@
 
 
 #### 2. 模型层：多种深度学习模型支持
-  目前项目集成的
+  目前项目集成的深度学习模型如下，详细的模型介绍请参见文档**时序异常检测模型介绍.pdf**。
 
 | 模型类型       | 核心逻辑                                                                 | 损失函数特点                                                                 |
 |----------------|--------------------------------------------------------------------------|------------------------------------------------------------------------------|
