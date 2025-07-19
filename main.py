@@ -6,7 +6,7 @@ from src.models import *  # 导入自定义模型（如DAGMM、TranAD等异常�
 from src.constants import *  # 导入常量（如颜色配置、路径等）
 from src.pot import *  # 导入POT算法相关函数（用于异常阈值计算）
 from src.utils import *  # 导入工具函数（如绘图、评估指标计算等）
-from src.diagnosis import *  # 导入诊断相关函数（可能用于结果分析）
+from src.diagnosis import *  #
 import torch.nn as nn  # PyTorch神经网络模块
 from time import time  # 用于计算时间
 from pprint import pprint  # 用于格式化输出
@@ -136,9 +136,10 @@ if __name__ == '__main__':
     torch.zero_grad = True  # 禁用梯度计算（节省内存）
     model.eval()
     print(f'{color.HEADER}在{args.dataset}数据集上测试{args.model}模型{color.ENDC}')
-    # 调用backprop进行测试，返回损失和预测结果 loss:(28479,38)  y_pred(28479,38)
+    # 调用backprop进行测试，返回损失和预测结果
     #loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False) # loss(28479,38) y_pred(28479,38)
     # 使用策略模式调用测试逻辑
+    # loss:(28479,38)  y_pred(28479,38)
     loss, y_pred = backprop_strategy.forward(
         epoch=0,
         data=testD,
@@ -187,8 +188,8 @@ if __name__ == '__main__':
     # 综合评估
     result, _ = pot_eval(lossTfinal, lossFinal, labelsFinal)
     # 添加命中分数和NDCG等指标
-    result.update(hit_att(loss, labels))
-    result.update(ndcg(loss, labels))
+    # result.update(hit_att(loss, labels))
+    # result.update(ndcg(loss, labels))
 
     # 打印评估结果
     print("各特征评估结果：")
