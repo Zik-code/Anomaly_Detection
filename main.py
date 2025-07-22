@@ -6,7 +6,7 @@ from src.models import *  # 导入自定义模型（如DAGMM、TranAD等异常�
 from src.constants import *  # 导入常量（如颜色配置、路径等）
 from src.pot import *  # 导入POT算法相关函数（用于异常阈值计算）
 from src.utils import *  # 导入工具函数（如绘图、评估指标计算等）
-from src.diagnosis import *  #
+#from src.diagnosis import *  #
 import torch.nn as nn  # PyTorch神经网络模块
 from time import time  # 用于计算时间
 from pprint import pprint  # 用于格式化输出
