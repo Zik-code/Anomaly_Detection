@@ -132,7 +132,7 @@ class TranADBackprop(BackpropStrategy):
 # -------------------------- DTAAD模型子类 --------------------------
 class DTAADBackprop(BackpropStrategy):
     def forward(self, epoch, data, dataO, optimizer, scheduler, training=True):
-        # 基础损失函数（保留原始逻辑）
+        # 基础损失函数（
         mse_loss = nn.MSELoss(reduction='mean' if training else 'none')
         feats = dataO.shape[1]  # 特征数
         _lambda = 0.8  # 双输出损失权重（与DTAAD的双分支对应）
@@ -140,7 +140,7 @@ class DTAADBackprop(BackpropStrategy):
         # 数据处理
         data_x = torch.DoubleTensor(data)
         dataset = TensorDataset(data_x, data_x)
-        batch_size = self.model.batch if training else len(data)  # 用model.batch而非batch_size
+        batch_size = self.model.batch if training else len(data)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=training)
 
         total_losses = []
@@ -149,7 +149,7 @@ class DTAADBackprop(BackpropStrategy):
             self.model.train()
             for batch_data, _ in dataloader:
                 # 1. 维度调整：[batch, window, feats] -> [batch, feats, window]（适配DTAAD的TCN输入）
-                window = batch_data.permute(0, 2, 1).double()  # 关键：修正维度顺序
+                window = batch_data.permute(0, 2, 1).double()
 
                 # 2. 提取目标值（窗口最后一个时刻的特征）
                 target = batch_data[:, -1, :].double()  # 形状：[batch, feats]

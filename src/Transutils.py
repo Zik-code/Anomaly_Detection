@@ -405,7 +405,7 @@ class Tcn_Local(nn.Module):
         layers = []
         num_levels = 3
         out_channels = num_outputs
-        for i in range(num_levels):
+        for i in range(num_levels): # dilation=1是普通卷积
             layers += [TemporalCnn(out_channels, out_channels, kernel_size, stride=1, dilation=1,
                                    padding=(kernel_size - 1),
                                    dropout=dropout)]  # Adding padding to the convolved tensor to achieve causal convolution by slicing the tensor

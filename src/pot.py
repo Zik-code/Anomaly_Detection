@@ -77,7 +77,7 @@ def adjust_predicts(score, label,
         if actual[i] and predict[i] and not anomaly_state:
             anomaly_state = True  # 进入异常段
             anomaly_count += 1  # 计数真实异常段
-
+            # j的取值：从i开始，每次减1，直到j=1（因为range的结束值是开区间，0不包含在内）
             # 回溯修正：将当前异常段中前面漏标的点补标为异常
             for j in range(i, 0, -1):
                 if not actual[j]:  # 遇到正常点则停止回溯
@@ -91,7 +91,7 @@ def adjust_predicts(score, label,
         elif not actual[i]:
             anomaly_state = False
 
-        # 情况3：处于异常段中，强制标记当前点为异常（避免中间漏标）
+        # 情况3：处于异常段中，强制标记当前点为异常
         if anomaly_state:
             predict[i] = True
 
@@ -182,7 +182,6 @@ def calc_seq(score, label, threshold, calc_latency=False):
 def pot_eval(init_score, score, label, q=1e-5, level=0.02):
     """
     使用POT（Peak Over Threshold）算法计算异常阈值并评估
-
     POT算法原理：从正常样本中学习"正常分布"，将显著偏离该分布的样本判定为异常
     适用于无监督场景（仅需少量正常样本即可确定阈值）
 
@@ -197,13 +196,15 @@ def pot_eval(init_score, score, label, q=1e-5, level=0.02):
         dict: 包含各项评估指标的字典
         np.ndarray: 最终的异常预测标记数组
     """
+
     lms = lm[0]  # 从常量导入初始阈值参数（用于POT初始化）
 
     # 初始化POT模型（处理可能的初始化失败，逐步调整参数）
+    #  result, pred = pot_eval(lt, l, ls)  # pred(28479,) pre
     while True:
         try:
             s = SPOT(q)  # 实例化POT模型（q为风险水平）
-            s.fit(init_score, score)  # 拟合训练集和测试集分数分布
+            s.fit(init_score, score)  # 预处理数据，转化为numpy.array,划分出小部分
             # 初始化阈值（level控制初始阈值的严格程度）
             s.initialize(level=lms, min_extrema=False, verbose=False)
         except:
@@ -217,7 +218,7 @@ def pot_eval(init_score, score, label, q=1e-5, level=0.02):
     # 计算最终异常阈值（取POT输出阈值的均值并乘以调整系数）
     pot_th = np.mean(ret['thresholds']) * lm[1]
 
-    # 调整预测结果（处理连续异常）并计算延迟
+    # 根据阈值将测试集的异常分数转换为异常标签，
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
     # 计算基础评估指标
     p_t = calc_point2point(pred, label)
