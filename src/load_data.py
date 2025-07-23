@@ -24,7 +24,7 @@ def load_dataset(dataset):
 	# loader = [i[:, debug:debug+1] for i in loader]
     # loader里面存了三个二维数组，machine-1-1_train.npy machine-1-1_test.npy machine-1-1_labels.npy
 	#if args.less: loader[0] = cut_array(0.2, loader[0])
-    # batch_size一个批次是一台机器的28439次检测
+    # batch_size一个批次是一台机器的28479次检测
 	train_loader = DataLoader(loader[0], batch_size=loader[0].shape[0])
 	test_loader = DataLoader(loader[1], batch_size=loader[1].shape[0])
 	labels = loader[2]

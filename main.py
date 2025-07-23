@@ -98,12 +98,12 @@ if __name__ == '__main__':
     trainD, testD = next(iter(train_loader)), next(iter(test_loader)) # 取出一个bacth_size数据
     trainO, testO = trainD, testD  # 保存原始数据（用于结果对齐）
 
-    # 对需要窗口输入的模型，转换训练和测试数据为窗口格式，
+    # 对需要窗口输入的模型，转换训练和测试数据为三维的窗口格式，
     # 'TranAD'有多个模型，单独放置更灵活地匹配所有包含 TranAD 的模型名称，而无需枚举所有变体。
     if model.name in 'TranAD' or 'DTAAD'in model.name:
-        trainD, testD = convert_to_windows(trainD, model,args), convert_to_windows(testD, model,args) # trainD:{28479,10,38}
+        trainD, testD = convert_to_windows(trainD, model,args), convert_to_windows(testD, model,args) # trainD:(28479,10,38)
 
-        # **** 修改后的获取对应的反向传播策略
+        # 获取对应的反向传播策略
     backprop_strategy = BackpropFactory.get_strategy(model)
     # -------------------------- 训练阶段 --------------------------
     if not args.test:  # 训练
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         # 迭代训练轮次（用tqdm显示进度条）
         for e in tqdm(list(range(epoch + 1, epoch + num_epochs + 1))):
             # 调用backprop进行训练，返回损失和学习率
-            # 新代码：通过策略实例调用forward方法
+            # 通过策略实例调用forward方法
             lossT, lr = backprop_strategy.forward(
                 epoch=e,
                 data=trainD,
@@ -137,9 +137,10 @@ if __name__ == '__main__':
     model.eval()
     print(f'{color.HEADER}在{args.dataset}数据集上测试{args.model}模型{color.ENDC}')
     # 调用backprop进行测试，返回损失和预测结果
-    #loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False) # loss(28479,38) y_pred(28479,38)
+    #loss, y_pred = backprop(0, model, testD, testO, optimizer, scheduler, training=False)
     # 使用策略模式调用测试逻辑
     # loss:(28479,38)  y_pred(28479,38)
+    # epoch=0 是测试阶段调用 backprop 时的默认参数
     loss, y_pred = backprop_strategy.forward(
         epoch=0,
         data=testD,
@@ -149,6 +150,7 @@ if __name__ == '__main__':
         training=False
     )
     if not args.test:
+        # 将测试数据的原始标签（testO）沿着第 0 维度（时间维度）向前滚动 1 步，即每个时间步的标签与下一个时间步对齐。
         if 'TranAD' or 'DTAAD' in model.name: testO = torch.roll(testO, 1, 0)
         plotter(f'{args.model}_{args.dataset}', testO, y_pred, loss, labels)
 
@@ -169,7 +171,7 @@ if __name__ == '__main__':
         training=False
     )
 
-    # 对每个特征单独评估
+    # 对每个特征单独评估,lossT，loss为训练集，测试集总损失
     for i in range(loss.shape[1]): # i 0~37
         lt = lossT[:, i]  # 训练集第i个特征的损失 lt(28479,)
         l = loss[:, i]  # 测试集第i个特征的损失 l(28479,)
@@ -179,7 +181,7 @@ if __name__ == '__main__':
         df = df._append(result, ignore_index=True)  # 记录每个特征的评估结果
 
     # 综合所有特征的损失进行评估
-    # 训练集总损失（平均所有特征）
+    # 训练集总损失（平均所有特征），axis=1为列
     lossTfinal = np.mean(lossT, axis=1)
     # 测试集总损失（平均所有特征）
     lossFinal = np.mean(loss, axis=1)

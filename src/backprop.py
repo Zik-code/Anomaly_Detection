@@ -79,7 +79,7 @@ class TranADBackprop(BackpropStrategy):
         # 转换数据为DoubleTensor并创建数据集，data为trainD,train0
         data_x = torch.DoubleTensor(data) # {28479,10,38}
         dataset = TensorDataset(data_x, data_x)
-        # batch_size为128，每次加载128个窗口的数据(machine-1-1的数据被分为大约2000多个窗口)
+        # batch_size为128
         bs = self.model.batch if training else len(data)
         dataloader = DataLoader(dataset, batch_size=bs)
         n = epoch + 1
