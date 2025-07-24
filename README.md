@@ -131,9 +131,9 @@ Alban Siffer, Pierre-Alain Fouque, Alexandre Termier, Christine Largouët. Anoma
 
 **判断异常** 
 
-  用这个阈值对测试数据集的异常分数判定，大于阈值的异常分数对应的时间点标记为异常，形成一个异常标记序列pred,再将pred与label比较计算TP,TN，（TP即pred和label同时为1，实际异常检测出来也是异常的时间点）进一步计算F1，检测时间序列异常需要通过一个函数方法（adjust_predicts()）对异常标记序列pred做出修正，如果测试集的当前时间点数据被判定为异常（1）并且对应真实的标签位的也是异常（1）但尚未标记为异常段，回溯真实的标签位将pred对应的判定位修改为True(异常)，最后函数返回修正后的pred,再进行一般的F1计算。 
+  用这个阈值对测试数据集的异常分数判定，大于阈值的异常分数对应的时间点标记为异常，形成一个异常标记序列pred,再将pred与label比较计算TP,TN，（TP即pred和label同时为1，实际异常检测出来也是异常的时间点）进一步计算F1，检测时间序列异常需要通过一个函数方法（adjust_predicts()）对异常标记序列pred做出修正，如果测试集的当前时间点数据被判定为异常（True）并且对应真实的标签位的也是异常（True）但尚未标记为异常段，回溯真实的标签位将pred对应的判定位修改为True(异常)，最后函数返回修正后的pred,再进行一般的F1计算。 
   
-  下图演示了修正predict的过程
+  下图演示了修正predict的过程,**注意实际actual和pred列表中存的是False和True,而非0,1,下图只是为了便于表示**
 - <img width="872" height="643" alt="image" src="https://github.com/user-attachments/assets/9bbf3634-5256-4e48-918b-512ab2276b55" />
 
 #### 7.检测指标
