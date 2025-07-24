@@ -460,6 +460,7 @@ class SPOT:
 
             th.append(self.extreme_quantile)  # thresholds record
 
+    #  'alarms'异常点索引集合
         return {'thresholds': th, 'alarms': alarm}
 
     def plot(self, run_results, with_alarm=True):

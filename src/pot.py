@@ -65,15 +65,20 @@ def adjust_predicts(score, label,
 
     # 生成初始预测结果（若未提供pred则用threshold判定）
     if pred is None:
-        predict = score > threshold  # 分数超过阈值视为异常
+
+        predict = score > threshold  # 分数超过阈值视为异常   predict:[False False False False False False··········]
     else:
         predict = pred  # 使用外部提供的预测结果
-
+    # 将原始标签 label 转换为二值化的真实异常标记True,False ，
+    # 原始label为[0.0.0.0.0.0.0.0.0.0.0···············]
+    # 转化后actual为: [False False False False False False········· ]
+    # 转化的原因：与predict匹配
     actual = label > 0.1  # 真实异常标签（处理可能的非0/1标签）
 
     # 遍历所有样本，修正连续异常段的预测结果
     for i in range(len(score)):
         # 情况1：当前是真实异常，且预测为异常，但尚未标记为异常段
+        # if/elif 处理异常段状态的切换（进入 / 退出)
         if actual[i] and predict[i] and not anomaly_state:
             anomaly_state = True  # 进入异常段
             anomaly_count += 1  # 计数真实异常段
@@ -91,11 +96,11 @@ def adjust_predicts(score, label,
         elif not actual[i]:
             anomaly_state = False
 
-        # 情况3：处于异常段中，强制标记当前点为异常
+        # 修正: 处于异常段中，无论predict[i]是否为异常，都标记为异常
         if anomaly_state:
             predict[i] = True
 
-    # 计算平均检测延迟（总延迟/异常段数量）
+    # 计算平均检测延迟（总延迟/异常段数量），以异常段为单位统计延迟
     if calc_latency:
         return predict, latency / (anomaly_count + 1e-4)  # 加微小值避免除零
     else:
@@ -213,12 +218,13 @@ def pot_eval(init_score, score, label, q=1e-5, level=0.02):
         else:
             break  # 初始化成功，退出循环
 
-    # 运行POT算法，得到异常阈值和报警点
+    # 运行POT算法，得到异常阈值
+    #dynamic=False ，检测过程中阈值保持不变,ret字典中存alarms:检测到的异常索引,threshoulds:阈值，总共时间步28479个阈值，仍以列表形式存在，目的是为每个数据点提供对应的阈值（dynamic=False,实际为同一固定值的重复），以适配逐点异常判断的逻辑，保持接口一致性。
     ret = s.run(dynamic=False)
-    # 计算最终异常阈值（取POT输出阈值的均值并乘以调整系数）
+    # 计算最终异常阈值（取POT输出阈值的均值并乘以调整系数）dynamic为False,阈值为同一个值，每个值是相同的，取均值实际就是每一个值
     pot_th = np.mean(ret['thresholds']) * lm[1]
 
-    # 根据阈值将测试集的异常分数转换为异常标签，
+    # 根据阈值将测试集的异常分数转换为异常标签，calc_latency=True为要计算异常延迟
     pred, p_latency = adjust_predicts(score, label, pot_th, calc_latency=True)
     # 计算基础评估指标
     p_t = calc_point2point(pred, label)
@@ -234,5 +240,5 @@ def pot_eval(init_score, score, label, q=1e-5, level=0.02):
         'FN': p_t[6],  # 假负例数量
         'ROC/AUC': p_t[7],  # ROC曲线下面积
         'threshold': pot_th,  # 最终使用的异常阈值
-        # 'pot-latency': p_latency   # 检测延迟（可选）
+        'pot-latency': p_latency   # 检测延迟（可选）
     }, np.array(pred)
