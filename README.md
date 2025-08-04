@@ -154,26 +154,27 @@ TranAD子类继承如下图:
 
 超参数设置与原论文保持一致
 
-不同数据集上模型
+参数设置如下表:<br>
+### 参数设置 
 
-参数设置:<br>
-TranAD                          
-batch_size:128              
-window_size:10
+| 模型       | 超参数配置                                                                 |
+|------------|--------------------------------------------------------------------------|
+| OmniAnomaly | • batch_size: 128<br>• window_size: 10                                   |
+| TranAD     | • batch_size: 128<br>• window_size: 10                                   |
+| TFMAE      | • batch_size: 64<br>• window_size: 10<br>• Frequency Masking Ratio: SMD(20%)、SMAP(30%)、MSL(40%)<br>• Temporal Masking Ratio: SMD(5%)、SMAP(65%)、MSL(55%) |
+| DTAAD      | 见下图 |
+| USAD       |       见下图                          |
 
-TFMAE
-batch_size:64
 
-DTAAD                          
-batch_size:128              
-window_size:10
+DTAAD  <br>                        
+<img width="567" height="197" alt="image" src="https://github.com/user-attachments/assets/26e3a797-9447-4384-8c3f-3503e3f00099" />
 
+USAD <br>
 ![img.png](Hyper-parameters/img.png)
 
 
 lr(学习率):
 'SMD': 0.0001,
-'SWaT': 0.008,
 'SMAP': 0.001,
 'MSL': 0.002,
 
