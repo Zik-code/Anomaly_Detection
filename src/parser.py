@@ -13,7 +13,7 @@ parser.add_argument('--model',
 					metavar='-m',
 					type=str,
 					required=False,
-					default='TranAD',
+					default='USAD',
                     help="model name")
 parser.add_argument('--test',
 					action='store_true',

@@ -1,9 +1,11 @@
-import torch.nn as nn
+import math
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import math
 import numpy as np
+from torch.nn import TransformerEncoder, TransformerEncoderLayer, TransformerDecoder, TransformerDecoderLayer
+from src.constants import lr
 
 
 class ConvLSTMCell(nn.Module):
@@ -342,6 +344,10 @@ class Cholesky(torch.autograd.Function):
         s = torch.mm(linv.t(), torch.mm(inner, linv))
         return s
 
+
+
+
+#  ------------------------------------------------- DTAAD_gltcn---------------------------------------------------
 import math
 import torch.nn as nn
 from torch.nn.utils import weight_norm
@@ -440,6 +446,7 @@ class Tcn_Global(nn.Module):
         """
         super(Tcn_Global, self).__init__()
         layers = []
+        # num_levels =3(num_inputs 为10，kernel_size为3 计算)
         num_levels = math.ceil(math.log2((num_inputs - 1) * (2 - 1) / (kernel_size - 1) + 1))
         out_channels = num_outputs
         for i in range(num_levels):
@@ -460,3 +467,4 @@ class Tcn_Global(nn.Module):
         :return: size of (Batch, out_channel, seq_len)
         """
         return self.network(x)
+

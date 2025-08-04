@@ -1,18 +1,11 @@
-import pickle
-import os
-import pandas as pd
-from tqdm import tqdm  # 用于显示进度条
-from src.models import *  # 导入自定义模型（如DAGMM、TranAD等异常检测模型）
-from src.constants import *  # 导入常量（如颜色配置、路径等）
+import sys
 from src.pot import *  # 导入POT算法相关函数（用于异常阈值计算）
-from src.utils import *  # 导入工具函数（如绘图、评估指标计算等）
-#from src.diagnosis import *  #
-import torch.nn as nn  # PyTorch神经网络模块
-from time import time  # 用于计算时间
-from pprint import pprint  # 用于格式化输出
 from src.plotting import *
 from src.load_data import *
-from src.backprop import *
+from backprop.backprop import *
+from src.Transutils import *
+models_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'models'))
+sys.path.append(models_path)
 
 
 def save_model(model, optimizer, scheduler, epoch, accuracy_list):
@@ -54,11 +47,11 @@ def load_model(modelname, dims):
         epoch: 上次训练的轮次（-1表示新模型）
         accuracy_list: 训练记录（损失和学习率）
     """
-    import src.models  # 局部导入，src.models模块较多，避免程序启动就加载模块，提高大型项目初始化速度
-    # 动态获取模型类（根据模型名从src.models中获取）
-    model_class = getattr(src.models, modelname)
-    model = model_class(dims).double()  # 初始化模型，设置为double精度
 
+    import models
+    model_class = getattr(models, modelname)
+
+    model = model_class(dims).double()  # 初始化模型，设置为double精度
     # 初始化优化器（AdamW，带权重衰减）
     optimizer = torch.optim.AdamW(
         model.parameters(), #需要优化的模型参数集合
@@ -99,8 +92,8 @@ if __name__ == '__main__':
     trainO, testO = trainD, testD  # 保存原始数据（用于结果对齐）
 
     # 对需要窗口输入的模型，转换训练和测试数据为三维的窗口格式，
-    # 'TranAD'有多个模型，单独放置更灵活地匹配所有包含 TranAD 的模型名称，而无需枚举所有变体。
-    if model.name in 'TranAD' or 'DTAAD'in model.name:
+    #
+    if model.name in ['USAD','TranAD'] or 'DTAAD'in model.name:
         trainD, testD = convert_to_windows(trainD, model,args), convert_to_windows(testD, model,args) # trainD:(28479,10,38)
 
         # 获取对应的反向传播策略
@@ -108,13 +101,15 @@ if __name__ == '__main__':
     # -------------------------- 训练阶段 --------------------------
     if not args.test:  # 训练
         print(f'{color.HEADER}在{args.dataset}数据集上训练{args.model}模型{color.ENDC}')
-        num_epochs = 1 # 训练轮次
+        num_epochs = 1
+        # 训练轮次
         e = epoch + 1  # 起始轮次
         start = time()  # 记录开始时间
         # 迭代训练轮次（用tqdm显示进度条）
         for e in tqdm(list(range(epoch + 1, epoch + num_epochs + 1))):
             # 调用backprop进行训练，返回损失和学习率
             # 通过策略实例调用forward方法
+
             lossT, lr = backprop_strategy.forward(
                 epoch=e,
                 data=trainD,
@@ -129,7 +124,7 @@ if __name__ == '__main__':
         print(color.BOLD + '训练时间: ' + "{:10.4f}".format(time() - start) + ' 秒' + color.ENDC)
         # 保存模型
         save_model(model, optimizer, scheduler, e, accuracy_list)
-        # 绘制训练损失曲线
+        # 一轮结束绘制训练损失曲线
         plot_accuracies(accuracy_list, f'{args.model}_{args.dataset}')
 
     # -------------------------- 测试阶段 -------------------------
@@ -154,7 +149,7 @@ if __name__ == '__main__':
         if 'TranAD' or 'DTAAD' in model.name: testO = torch.roll(testO, 1, 0)
         plotter(f'{args.model}_{args.dataset}', testO, y_pred, loss, labels)
 
-        ### Plot attention
+        # 绘制DTAAD的注意力图
     if not args.test:
         if 'DTAAD' in model.name:
             plot_attention(model, 1, f'{args.model}_{args.dataset}')
@@ -162,6 +157,7 @@ if __name__ == '__main__':
     # 评估指标计算
     df = pd.DataFrame()  # 存储每个特征的评估结果
     # 计算训练集损失（用于确定异常阈值）
+    #
     lossT, _ = backprop_strategy.forward(
         epoch=0,
         data=trainD,
